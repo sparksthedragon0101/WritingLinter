@@ -1,0 +1,14 @@
+[project]
+name = "writing-linter"
+version = "1.0.0"
+description = "A premium, high-performance prose linter and refiner powered by spaCy."
+authors = [{ name = "Advanced Agentic Coding Team" }]
+dependencies = [
+    "flask",
+    "spacy",
+    "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

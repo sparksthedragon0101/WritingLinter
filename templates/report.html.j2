@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writing Linter | Professional Prose Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .date {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 1.5rem;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            background: var(--surface-hover);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .metric-value span {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 0.25rem;
+        }
+
+        .prose-score {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(192, 132, 252, 0.1));
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            .prose-score { grid-column: span 1; }
+        }
+
+        .score-large {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0.5rem 0;
+            color: var(--primary);
+        }
+
+        details {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        summary {
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        summary:hover {
+            background: var(--surface-hover);
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary::after {
+            content: '→';
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+        }
+
+        details[open] summary::after {
+            transform: rotate(90deg);
+        }
+
+        .technical-content {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        pre {
+            background: var(--bg);
+            padding: 1.25rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: #e2e8f0;
+            border: 1px solid var(--border);
+            white-space: pre-wrap;
+        }
+
+        .text-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 2.5rem;
+            border-radius: 12px;
+            font-size: 1.125rem;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+        }
+
+        .badge-success { color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+        .badge-warning { color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
+        .badge-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Writing Linter Analysis</h1>
+                <p class="date">Report generated on {{ date_str }}</p>
+            </div>
+            <div class="badge badge-success">v2.1.0</div>
+        </header>
+
+        {% if include_analysis %}
+        <section id="summary">
+            <h2>Executive Summary</h2>
+            <div class="summary-grid">
+                <div class="metric prose-score">
+                    <div class="metric-label">Overall Prose Score</div>
+                    <div class="score-large">{{ summary.get('prose_score', 0) }}<span>/100</span></div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Word Count</div>
+                    <div class="metric-value">{{ summary.get('word_count', 0) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Est. Reading Time</div>
+                    <div class="metric-value">{{ summary.get('reading_time', 'N/A') }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Avg Sentence Length</div>
+                    <div class="metric-value">{{ "%.1f"|format(summary.get('avg_sent_len') or 0) }}<span>words</span></div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Dialogue Ratio</div>
+                    <div class="metric-value">{{ "%.1f"|format(summary.get('dialogue_ratio') or 0) }}<span>%</span></div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Passive Voice</div>
+                    <div class="metric-value">{{ "%.1f"|format(summary.get('passive_perc') or 0) }}<span>%</span></div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Drone Factor</div>
+                    <div class="metric-value">{{ "%.2f"|format(summary.get('drone_factor') or 0) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Total Issues</div>
+                    <div class="metric-value">{{ summary.get('total_issues', 0) }}</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="technical">
+            <h2>Technical Analysis</h2>
+            <details>
+                <summary>NLP Technical Breakdown</summary>
+                <div class="technical-content">
+                    <pre><code>{{ report_content }}</code></pre>
+                </div>
+            </details>
+        </section>
+
+        <section id="refined">
+            <h2>AI Refined Text</h2>
+            <div class="text-content">{{ html_text | safe }}</div>
+        </section>
+        {% else %}
+        <section id="content">
+            <h2>Document Content</h2>
+            <div class="text-content">{{ html_text | safe }}</div>
+        </section>
+        {% endif %}
+
+        <footer>
+            <p>&copy; 2026 Writing Linter Professional. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

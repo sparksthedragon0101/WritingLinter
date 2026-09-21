@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results | Writing Assistant</title>
+    <link rel="icon" type="image/x-icon" href="/templates/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00B0FF;
+            --primary-dark: #0091EA;
+            --accent: #4ade80;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .header-title h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .stat-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-group:last-child { border-bottom: none; }
+
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .radar-container {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-success { background: var(--success); color: white; }
+
+        pre {
+            margin: 0;
+            padding: 24px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .highlights-container {
+            padding: 24px;
+            font-family: 'Inter', serif;
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .h-passive { background: rgba(174, 129, 255, 0.2); border-bottom: 2px solid #ae81ff; color: inherit; }
+        .h-splice { background: rgba(249, 38, 114, 0.2); border-bottom: 2px solid #f92672; color: inherit; }
+        .h-cliche { background: rgba(253, 151, 31, 0.2); border-bottom: 2px solid #fd971f; color: inherit; }
+        .h-nominal { background: rgba(74, 222, 128, 0.15); border-bottom: 2px dashed #4ade80; color: inherit; }
+        .h-redundant { background: rgba(251, 191, 36, 0.15); border-bottom: 2px dotted #fbbf24; color: inherit; }
+
+        .tooltip-container { position: relative; cursor: help; }
+        .tooltip-text {
+            visibility: hidden;
+            width: auto;
+            min-width: 140px;
+            max-width: 200px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 140%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+            line-height: 1.4;
+        }
+        .tooltip-container:hover .tooltip-text { 
+            visibility: visible; 
+            opacity: 1; 
+            transform: translateX(-50%) translateY(-5px);
+            z-index: 9999;
+        }
+        
+        .stat-label.tooltip-container { border-bottom: 1px dotted var(--text-dim); }
+
+        .toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Rhythm Heatmap Styles */
+        .rhythm-heatmap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 24px;
+            max-height: 350px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+        .rhythm-heatmap::-webkit-scrollbar { width: 6px; }
+        .rhythm-heatmap::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        .rhythm-paragraph {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .rhythm-paragraph:hover, .rhythm-paragraph.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 176, 255, 0.1);
+        }
+        .rhythm-block {
+            width: 14px;
+            height: 30px;
+            border-radius: 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            cursor: pointer;
+        }
+        .rhythm-block:hover {
+            transform: scaleY(1.2);
+            z-index: 10;
+            box-shadow: 0 0 8px rgba(255,255,255,0.3);
+        }
+        .rhythm-block[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            border: 1px solid var(--border);
+        }
+
+        /* Popover Styles */
+        .highlight {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline;
+            padding: 0 1px;
+            border-radius: 4px;
+        }
+        .popover {
+            position: absolute;
+            bottom: 140%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: block; /* Ensure the span behaves like a block container */
+            width: 240px;
+            max-width: 90vw;
+            box-shadow: 0 12px 30px -5px rgba(0,0,0,0.5);
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* Show below if space is tight at top */
+        .highlight.popover-down .popover {
+            bottom: auto;
+            top: 140%;
+        }
+
+        .highlight.popover-down .popover::after {
+            bottom: 100%;
+            top: auto;
+            border-color: transparent transparent rgba(30, 41, 59, 0.98) transparent;
+        }
+
+        .highlight:hover .popover,
+        .highlight.active .popover {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        .popover::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: rgba(30, 41, 59, 0.98) transparent transparent transparent;
+        }
+        .popover.popover-down::after {
+            top: auto;
+            bottom: 100%;
+            border-top-color: transparent;
+            border-bottom-color: rgba(30, 41, 59, 0.98);
+        }
+        .popover-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .popover-desc {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .highlight-flash {
+            animation: flash-animation 1.5s ease-out;
+        }
+        @keyframes flash-animation {
+            0% { background: rgba(0, 176, 255, 0.4); box-shadow: 0 0 20px rgba(0, 176, 255, 0.5); }
+            100% { background: transparent; box-shadow: none; }
+        }
+        .para-wrapper {
+            transition: background 0.4s ease;
+            padding: 24px;
+            margin-bottom: 3rem;
+            border-radius: 20px;
+            line-height: 1.95;
+            font-size: 1.15rem;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .s-wrap {
+            transition: background 0.3s, box-shadow 0.3s;
+            border-radius: 6px;
+            padding: 2px 4px;
+            cursor: pointer;
+            display: inline;
+        }
+        .s-wrap:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .sentence-flash {
+            animation: sentence-glow 2s ease-in-out;
+        }
+        @keyframes sentence-glow {
+            0% { background: rgba(0, 176, 255, 0.3); box-shadow: 0 0 10px rgba(0, 176, 255, 0.4); }
+            50% { background: rgba(0, 176, 255, 0.15); box-shadow: 0 0 5px rgba(0, 176, 255, 0.2); }
+            100% { background: transparent; box-shadow: none; }
+        }
+        .popover-fix {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-style: italic;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+        
+        /* Ensure highlights don't break layout and popovers are visible */
+        .highlight:hover {
+            background: rgba(255, 255, 255, 0.15);
+            z-index: 100;
+        }
+        
+        .highlights-container {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text);
+            white-space: pre-wrap; /* Preserve paragraph spacing */
+            overflow-y: auto;
+            max-height: 500px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            position: relative; /* Establish scroll container for children */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>Analysis Results</h1>
+                <p id="subTitle" style="color: var(--text-dim); margin-top: 5px;">Asynchronous NLP Analysis Complete</p>
+            </div>
+            <div class="actions">
+                <a href="/" class="btn btn-outline">New Analysis</a>
+                <div class="export-controls" style="display: flex; gap: 10px;">
+                    <button onclick="exportResult('docx', false)" class="btn btn-outline" title="Download only the refined text">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Text Only
+                    </button>
+                    <button onclick="exportResult('docx', true)" class="btn btn-primary" title="Download text plus full analysis report">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Full Report (.docx)
+                    </button>
+                    <button onclick="exportResult('markdown', true)" class="btn btn-outline" title="Download Markdown report">
+                        Full Report (.md)
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3 style="margin-top: 0; margin-bottom: 20px;">Writing DNA</h3>
+                <div class="radar-container">
+                    <canvas id="toneChart"></canvas>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="stat-group">
+                    <span class="stat-label tooltip-container">
+                        Word Count
+                        <span class="tooltip-text">Total number of words in your text.</span>
+                    </span>
+                    <span class="stat-value" id="wordCount">-</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-label tooltip-container">
+                        Mood
+                        <span class="tooltip-text">The primary emotional tone detected.</span>
+                    </span>
+                    <span class="stat-value" id="moodValue">-</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-label tooltip-container">
+                        Readability
+                        <span class="tooltip-text">Flesch Reading Ease score. Higher is easier.</span>
+                    </span>
+                    <span class="stat-value" id="readScore">-</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-label tooltip-container">
+                        Intensity
+                        <span class="tooltip-text">Emotional intensity of the writing.</span>
+                    </span>
+                    <span class="stat-value" id="intensityValue">-</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-label tooltip-container">
+                        Passive Voice
+                        <span class="tooltip-text">Percentage of sentences using passive constructions.</span>
+                    </span>
+                    <span class="stat-value" id="passivePerc">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 32px;">
+            <div class="panel-header">
+                <span>Paragraph Rhythm Heatmap</span>
+                <span style="font-size: 0.75rem; color: var(--text-dim);">Visualizing Flow Dynamics</span>
+            </div>
+            <div id="rhythmMap" class="rhythm-heatmap"></div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 32px;">
+            <div class="panel-header">
+                <span>Interactive Analysis Explorer</span>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-dim); margin-right: 8px;">Toggles:</span>
+                    <button class="toggle-btn active" id="t-passive" onclick="toggleT('passive')">Passive</button>
+                    <button class="toggle-btn active" id="t-splice" onclick="toggleT('splice')">Splices</button>
+                    <button class="toggle-btn active" id="t-cliche" onclick="toggleT('cliche')">Clichés</button>
+                    <button class="toggle-btn active" id="t-nominal" onclick="toggleT('nominal')">Zombies</button>
+                    <button class="toggle-btn active" id="t-redundant" onclick="toggleT('redundant')">Wordy</button>
+                </div>
+            </div>
+            <div class="highlights-container" id="interactiveContent"></div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <span>Performance Report</span>
+                    <button id="copyReportBtn" class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;" onclick="copyReport()">Copy</button>
+                </div>
+                <pre id="reportText"></pre>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span>Optimized Version</span>
+                    <button id="copyFixedBtn" class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;" onclick="copyFixed()">Copy</button>
+                </div>
+                <pre id="fixedText"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const result = JSON.parse(sessionStorage.getItem('linter_result'));
+        if (!result) window.location.href = '/';
+
+        function escapeHTML(str) {
+            if (!str) return "";
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m];
+            });
+        }
+
+        function initData() {
+            document.getElementById('wordCount').innerText = result.report.executive_summary.word_count;
+            document.getElementById('moodValue').innerText = result.report.tone.mood;
+            document.getElementById('readScore').innerText = Math.round(result.report.readability.score);
+            document.getElementById('intensityValue').innerText = result.report.tone.intensity;
+            document.getElementById('passivePerc').innerText = result.report.executive_summary.passive_perc + "%";
+            
+            document.getElementById('reportText').innerText = result.report_content;
+            document.getElementById('fixedText').innerText = result.fixed;
+            
+            initChart();
+            renderRhythmMap();
+            renderHighlights();
+        }
+
+        function renderRhythmMap() {
+            const container = document.getElementById('rhythmMap');
+            container.innerHTML = ""; // Clear existing
+            if(!result.report.rhythm_heatmap) return;
+            
+            result.report.rhythm_heatmap.forEach((p, pIdx) => {
+                const pEl = document.createElement('div');
+                pEl.id = `rhythm-p-${pIdx}`;
+                pEl.className = 'rhythm-paragraph';
+                pEl.onclick = () => scrollToParagraph(pIdx);
+                
+                p.sentences.forEach((s, sIdx) => {
+                    const len = s.length;
+                    const block = document.createElement('div');
+                    block.className = 'rhythm-block';
+                    block.onclick = (e) => {
+                        e.stopPropagation();
+                        scrollToSentence(pIdx, sIdx);
+                    };
+                    // Mapping length to color: ultra-short (<5) = blue, mid (15-25) = green, long (>40) = orange/red
+                    let color;
+                    if(len < 8) color = '#0ea5e9';
+                    else if(len < 20) color = '#10b981';
+                    else if(len < 35) color = '#eab308';
+                    else color = '#ef4444';
+                    
+                    block.style.backgroundColor = color;
+                    block.style.opacity = Math.min(1, 0.4 + (len/60));
+                    block.title = `"${s.text}"\nLength: ${len} words`;
+                    pEl.appendChild(block);
+                });
+                container.appendChild(pEl);
+            });
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('toneChart').getContext('2d');
+            const data = [
+                Math.abs(result.report.tone.sentiment_score * 100),
+                result.report.executive_summary.vocabulary.diversity_ratio,
+                100 - result.report.executive_summary.passive_perc,
+                result.report.readability.score,
+                Math.min(100, result.report.executive_summary.avg_sent_len * 3)
+            ];
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Sentiment', 'Vocabulary', 'Directness', 'Readability', 'Complexity'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: 'rgba(0, 176, 255, 0.2)',
+                        borderColor: 'rgba(0, 176, 255, 1)',
+                        pointBackgroundColor: 'rgba(0, 176, 255, 1)',
+                    }]
+                },
+                options: {
+                    scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#94a3b8' } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        let toggles = { passive: true, splice: true, cliche: true, nominal: true, redundant: true };
+        function toggleT(type) {
+            toggles[type] = !toggles[type];
+            document.getElementById(`t-${type}`).classList.toggle('active');
+            renderHighlights();
+        }
+
+        function renderHighlights() {
+            const container = document.getElementById('interactiveContent');
+            const text = result.original_text;
+            if (!text) return;
+            
+            let highlights = [];
+            
+            // Collect all issue types with metadata
+            if (toggles.passive && result.report.passive_voice) {
+                result.report.passive_voice.examples.forEach(ex => {
+                    if (ex.start !== undefined && ex.end !== undefined) {
+                        highlights.push({
+                            ...ex, 
+                            css: 'h-passive', 
+                            type: 'Passive Voice',
+                            desc: 'Using "be" verbs with past participles can weaken prose. Try active voice for more punch.',
+                            fix: ex.suggestion || 'Rephrase with an active subject.'
+                        });
+                    }
+                });
+            }
+            if (toggles.splice && result.report.sentence_splices) {
+                result.report.sentence_splices.forEach(ex => {
+                    if (ex.start !== undefined && ex.end !== undefined) {
+                        highlights.push({
+                            ...ex, 
+                            css: 'h-splice', 
+                            type: 'Sentence Splice',
+                            desc: 'Two independent clauses joined by only a comma. Use a semicolon, period, or conjunction.',
+                            fix: 'Split or use a different connector.'
+                        });
+                    }
+                });
+            }
+            if (toggles.cliche && result.report.advanced_features.cliches) {
+                result.report.advanced_features.cliches.forEach(ex => {
+                    if (ex.start !== undefined && ex.end !== undefined) {
+                        highlights.push({
+                            ...ex, 
+                            css: 'h-cliche', 
+                            type: 'Cliche',
+                            desc: 'An overused expression that has lost its impact. Fresh metaphors are more engaging.',
+                            fix: 'Replace with original imagery.'
+                        });
+                    }
+                });
+            }
+
+            if (toggles.nominal && result.report.nominalizations) {
+                result.report.nominalizations.forEach(ex => {
+                    if (ex.start !== undefined && ex.end !== undefined) {
+                        highlights.push({
+                            ...ex,
+                            css: 'h-nominal',
+                            type: 'Zombie Noun',
+                            desc: 'Verbs turned into complex nouns dampen energy. Revert to the strong verb.',
+                            fix: 'Change "' + ex.text + '" back to a verb form.'
+                        });
+                    }
+                });
+            }
+
+            if (toggles.redundant && result.report.redundancy) {
+                result.report.redundancy.forEach(ex => {
+                    if (ex.start !== undefined && ex.end !== undefined) {
+                        highlights.push({
+                            ...ex,
+                            css: 'h-redundant',
+                            type: 'Redundancy',
+                            desc: 'This phrase contains unnecessary words that don\'t add meaning.',
+                            fix: 'Consider: "' + ex.correction + '".'
+                        });
+                    }
+                });
+            }
+            
+            // Sort by start position
+            highlights.sort((a, b) => a.start - b.start);
+            
+            // Standardize splitting any number of newlines/carriage returns
+            const rawSegments = text.split(/(?:\r?\n)+/);
+            let contentHtml = "";
+            let currentSearchPos = 0;
+            let renderedParaCount = 0;
+
+            rawSegments.forEach((paraText, i) => {
+                const pStartIdx = text.indexOf(paraText, currentSearchPos);
+                
+                // Align with backend logic in text_refiner.py (get_all_paragraph_rhythm_data): 
+                // skip empty/whitespace-only segments
+                if (!paraText.trim() || pStartIdx === -1) {
+                    if (pStartIdx !== -1) currentSearchPos = pStartIdx + paraText.length;
+                    return; 
+                }
+
+                currentSearchPos = pStartIdx + paraText.length;
+                const pEndIdx = currentSearchPos;
+                const pHighlights = highlights.filter(h => h.start >= pStartIdx && h.start < pEndIdx);
+                
+                let pHtml = "";
+                let lastLocalIdx = 0;
+                for (let h of pHighlights) {
+                    const relativeStart = h.start - pStartIdx;
+                    const relativeEnd = h.end - pStartIdx;
+                    if (relativeStart < lastLocalIdx) continue;
+
+                    pHtml += escapeHTML(paraText.slice(lastLocalIdx, relativeStart));
+                    const hText = paraText.slice(relativeStart, Math.min(relativeEnd, paraText.length));
+                    
+                    pHtml += `<span class="highlight ${h.css}">${escapeHTML(hText)}<span class="popover"><span class="popover-title">✨ ${h.type}</span><span class="popover-desc">${escapeHTML(h.desc)}</span><span class="popover-fix">💡 ${escapeHTML(h.fix)}</span></span></span>`;
+                    lastLocalIdx = relativeEnd;
+                }
+                pHtml += escapeHTML(paraText.slice(lastLocalIdx));
+
+                // Final para wrap with sequential ID matching the backend heatmap index
+                contentHtml += `<div id="para-${renderedParaCount}" class="para-wrapper">${pHtml}</div>`;
+                renderedParaCount++;
+            });
+
+            console.log(`[Debug] UI rendered ${renderedParaCount} paragraphs. Heatmap has ${result.report.rhythm_heatmap.length} blocks.`);
+            container.innerHTML = contentHtml;
+
+            // Final touch: If we have sentence-level data, we can try to inject the spans into pHtml.
+            // But since sentence detection is already done by SpaCy in the backend, 
+            // the most reliable way is for the backend to return offsets for sentences too.
+            // Since we only have snippets, we'll highlight the paragraph and the snippet within it via JS on click.
+
+            // Add position-aware listeners after rendering
+            container.querySelectorAll('.highlight').forEach(el => {
+                const popover = el.querySelector('.popover');
+                
+                const checkPosition = () => {
+                    const elRect = el.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    const relativeTop = elRect.top - containerRect.top;
+                    
+                    // Force switch if close to top of viewport OR top of container
+                    if (relativeTop < 150 || elRect.top < 150) {
+                        el.classList.add('popover-down');
+                    } else {
+                        el.classList.remove('popover-down');
+                    }
+                };
+
+                el.addEventListener('mouseenter', checkPosition);
+                el.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    checkPosition();
+                    const isAlreadyActive = el.classList.contains('active');
+                    
+                    // Close others
+                    container.querySelectorAll('.highlight.active').forEach(other => {
+                        other.classList.remove('active');
+                    });
+                    
+                    if (!isAlreadyActive) {
+                        el.classList.add('active');
+                    }
+                });
+            });
+            
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.highlight')) {
+                    container.querySelectorAll('.highlight.active').forEach(el => el.classList.remove('active'));
+                }
+            });
+        }
+
+        function scrollToParagraph(index) {
+            const para = document.getElementById(`para-${index}`);
+            console.log(`[Debug] Scrolling to para-${index}`, para);
+            
+            if (para) {
+                para.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                para.classList.add('highlight-flash');
+                setTimeout(() => para.classList.remove('highlight-flash'), 1500);
+
+                // Update Heatmap Active State
+                document.querySelectorAll('.rhythm-paragraph').forEach(p => p.classList.remove('active'));
+                const pip = document.getElementById(`rhythm-p-${index}`);
+                if (pip) pip.classList.add('active');
+            } else {
+                console.warn(`[Scroll] Target para-${index} not found in DOM.`);
+            }
+        }
+
+        function scrollToSentence(pIdx, sIdx) {
+            const para = document.getElementById(`para-${pIdx}`);
+            if (para) {
+                para.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Visual feedback: Flash the paragraph
+                para.classList.add('highlight-flash');
+                setTimeout(() => para.classList.remove('highlight-flash'), 1500);
+
+                // Update Heatmap Active State
+                document.querySelectorAll('.rhythm-paragraph').forEach(p => p.classList.remove('active'));
+                const pip = document.getElementById(`rhythm-p-${pIdx}`);
+                if (pip) pip.classList.add('active');
+            }
+        }
+
+        async function exportResult(format, includeAnalysis = true) {
+            const bodyData = {
+                text: result.fixed,
+                report: result.report,
+                report_content: result.report_content,
+                include_analysis: includeAnalysis
+            };
+
+            const response = await fetch(`/export/${format}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            });
+            
+            if (!response.ok) {
+                alert("Export failed. Please check server logs.");
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const ext = format === 'markdown' ? 'md' : format;
+            const suffix = includeAnalysis ? "Full_Report" : "Text_Only";
+            a.download = `Writing_Linter_${suffix}.${ext}`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function copyToClipboard(text, btnId) {
+            const btn = document.getElementById(btnId);
+            const originalText = btn.innerHTML;
+            
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    // Fallback to execCommand('copy')
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed"; 
+                    textArea.style.left = "-999999px";
+                    textArea.style.top = "-999999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    if (!successful) throw new Error('Fallback copy failed');
+                }
+                
+                // Feedback
+                btn.innerHTML = '<span><i class="fas fa-check"></i> Copied!</span>';
+                btn.classList.add('bg-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-600');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                btn.innerHTML = '<span><i class="fas fa-times"></i> Error</span>';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }
+        }
+
+        function copyReport() { copyToClipboard(result.report_content, 'copyReportBtn'); }
+        function copyFixed() { copyToClipboard(result.fixed, 'copyFixedBtn'); }
+
+        document.addEventListener('DOMContentLoaded', initData);
+    </script>
+</body>
+</html>

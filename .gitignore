@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local configuration / secrets
+.env
+.env.*
+!.env.example
+.claude/
+*.pem
+*.key
+*.crt
+secrets/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Writing Linter runtime artifacts
+.writing_linter_cache/
+*.log
+server.*.log
+
+# Generated reports / scratch
+*_report.txt
+*_report.md
+*_fixed.txt
+*_lines.txt
+Writing_Linter_Full_Report.md
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

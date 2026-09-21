@@ -1,0 +1,26 @@
+# Core NLP
+spacy>=3.8
+pyspellchecker>=0.9
+
+# Web server (Flask + SocketIO via gevent worker)
+flask>=3.1
+flask-socketio>=5.6
+flask-executor>=1.0
+gevent>=25.9
+gevent-websocket>=0.10
+
+# Templating / config / export
+Jinja2>=3.1
+pyyaml>=6.0
+python-docx>=1.2
+
+# TTS / readability analysis
+nltk>=3.9
+syllapy>=0.7
+
+# File watching (CLI --watch)
+watchdog>=6.0
+
+# NOTE: a spaCy English model is also required. Install one of:
+#   python -m spacy download en_core_web_md   (default)
+#   python -m spacy download en_core_web_sm
